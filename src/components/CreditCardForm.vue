@@ -4,6 +4,7 @@
 			<label>
 				<p>CARD NUMBER</p>
 				<input
+				 v-model="cardNumberValue"
 				 class="card-number__input"
 				 type="text"
 				 pattern="[0-9\s]{13,19}"
@@ -11,7 +12,7 @@
 				 placeholder="1234 1234 1234 1234"
 				 ref="cardValue"
 				 :key="updateKey1"
-				 v-model="numberValue"
+				 @keydown="onKeyDown"
 				 >
 			</label>
 		</div>
@@ -19,16 +20,17 @@
 			<label>
 				<p>EXPIRY DATE</p>
 				<input
+				 v-model="expDateValue"
 				 class="card-date__input"
 				 type="text"
 				 pattern="\d{4}"
-				 maxlength="4"
+				 maxlength="5"
 				 placeholder="MM / YY"
-				 ref="dateValue"
-				 :key="updateKey2"
-				 v-model="dateValue"
+				 @keydown="onKeyDown"
 				 > 
+				 <div v-if="showMessage">Введіть коректне значення місяця (від 01 до 12)</div>
 			</label>	
+			
 			<label>
 				<p>SECURE CODE</p>
 				<input class="card-code__input" type="text" maxlength="3" v-model="codeValue">
@@ -58,29 +60,19 @@
 		data() {
 			return {
 				updateKey1: 0,
-				updateKey2: 0,
-
+				showMessage: false
 			}
 		},
 		computed: {
-			dateValue: {
+			expDateValue: {
 				get(){
 					return this.expiryDate
 				},
 				set(val){
-					val= val.replace(/\D/g, '');
-					this.$nextTick(() => {
-						this.updateKey2++;
-						this.$nextTick(() => {
-						this.$refs.dateValue.focus()
-						})
-					});
-					val = val.replace(/(\d{2})(\d{2})/, "$1/$2");
-					
 					this.$emit('update:expiryDate', val)
 				}
 			},
-			numberValue:{
+			cardNumberValue:{
 				get(){
 					return this.cardNumber
 				},
@@ -104,7 +96,27 @@
 					this.$emit('update:securityCode', val)
 				}
 			}
+		},
 
+		watch: {
+			expDateValue(newValue, oldValue) {
+				if (newValue.length === 2 && oldValue.length == 1) {
+					this.expDateValue = this.expDateValue + '/';
+				} else if (newValue.length === 2 && oldValue.length === 3) {
+					this.expDateValue = newValue[0];
+				};
+				(newValue[0]+newValue[1] > 12)? this.showMessage = true: this.showMessage = false
+			},
+		},
+		methods: {
+			onKeyDown(event) {
+				console.log(event.key)
+				const key = event.key;
+				const isDigit = key >= '0' && key <= '9';
+				if (!isDigit && key !== 'Backspace') {
+					event.preventDefault();
+				}
+			}
 		},
 	}
 </script>
@@ -147,6 +159,9 @@ label{
 	display: flex;
 	gap: 10px;
 	margin-bottom: 10px;
+	div{
+		color: red;
+	}
 }
 .card-code__input{
 	background: url('.././assets/question.jpg') right 8px center no-repeat, #fff;
